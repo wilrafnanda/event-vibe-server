@@ -110,3 +110,27 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ success: false, message: 'Login failed. Please try again.' });
   }
 };
+
+export const logoutUser = async (req, res) => {
+  try {
+    // Clear any auth cookie if set
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Session invalidated / Logged out successfully",
+    });
+  } catch (error) {
+    console.error("Session invalidation error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to invalidate session",
+    });
+  }
+};
+
+export const invalidateSession = logoutUser;

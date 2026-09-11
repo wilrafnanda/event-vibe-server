@@ -22,7 +22,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['user', 'admin', 'moderator'],
     default: 'user'
+  },
+  verify: {
+    type: Boolean,
+    default: false
   }
+
 }, {
   timestamps: true
 });
