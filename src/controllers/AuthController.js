@@ -7,6 +7,14 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || "default_jwt_secret", { expiresIn: "1d" });
 };
 
+// Cookie configuration options
+const getCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds (matches JWT 1d expiry)
+});
+
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -45,7 +53,11 @@ export const registerUser = async (req, res) => {
       role: role || 'user',
     });
 
-    // 4. Send back user data and token
+    // 4. Generate JWT & set HTTP-only cookie
+    const token = generateToken(user._id);
+    res.cookie("token", token, getCookieOptions());
+
+    // 5. Send back user data without token in response body
     res.status(201).json({
       success: true,
       message: 'Registration successful',
@@ -56,7 +68,6 @@ export const registerUser = async (req, res) => {
           email: user.email,
           role: user.role,
         },
-        token: generateToken(user._id),
       },
     });
   } catch (error) {
@@ -91,7 +102,11 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    // 4. Return user data and token
+    // 4. Generate JWT & set HTTP-only cookie
+    const token = generateToken(user._id);
+    res.cookie("token", token, getCookieOptions());
+
+    // 5. Return user data without token in response body
     res.status(200).json({
       success: true,
       message: 'Login successful',
@@ -102,7 +117,6 @@ export const loginUser = async (req, res) => {
           email: user.email,
           role: user.role,
         },
-        token: generateToken(user._id),
       },
     });
   } catch (error) {
@@ -113,11 +127,11 @@ export const loginUser = async (req, res) => {
 
 export const logoutUser = async (req, res) => {
   try {
-    // Clear any auth cookie if set
+    // Clear auth cookie with matching security flags
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
     });
 
     res.status(200).json({

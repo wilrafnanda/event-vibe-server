@@ -7,8 +7,8 @@ dotenv.config();
 // Express Backend Middleware for Protected Routes
 export const protect = async (req, res, next) => {
   try {
-    // 1. Get token from headers
-    const token = req.headers.authorization?.split(" ")[1];
+    // 1. Get token directly from incoming cookies (with fallback to Authorization header)
+    const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
 
     if (!token) {
       return res
@@ -38,6 +38,6 @@ export const admin = (req, res, next) => {
   if (req.user && req.user.role?.toLowerCase() === 'admin') {
     next(); // User is admin, proceed to the controller
   } else {
-    res.status(403).json({ message: 'Not authorized as an admin' });
+    res.status(403).json({ message: 'Not authorized ' });
   }
 };

@@ -11,6 +11,7 @@ const eventSchema = new mongoose.Schema({
   host: { type: mongoose.Schema.Types.ObjectId, ref: 'EventHost', required: true },
   eventName: { type: String, required: true, maxlength: 100 },
   description: String,
+  picture: String,
   location: String,
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },
