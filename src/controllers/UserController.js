@@ -68,38 +68,29 @@ export const getUsers = async (req, res) => {
   }
 };
 
-// @desc    Get single user by ID
-// @route   GET /api/users/:id
-// @access  Public / Protected
+
 export const getUserById = async (req, res) => {
   try {
-    const { email } = req.body;
+    const targetId = req.params?.id || req.userId;
 
-    if (!mongoose.Types.ObjectId.isValid(email)) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+    if (!targetId || !mongoose.Types.ObjectId.isValid(targetId)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
     }
 
-    const user = await User.findById(email).select("-password").lean();
-
+    // Fetch the user from the database. 
+    // .select('-password') ensures we don't accidentally leak the password hash
+    const user = await User.findById(targetId).select('-password');
+    
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(404).json({ message: 'User no longer exists' });
     }
 
-    res.status(200).json({
-      success: true,
-      data: user,
-    });
+    // Return the safe user data to React Query
+    res.json(user);
+
   } catch (error) {
-    console.error("Get user by ID error:", error);
-    res.status(500).json({
-      success: false,
-      message: "An error occurred while fetching user details",
-    });
+    console.error("Get user error:", error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
+

@@ -20,12 +20,8 @@ export const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_jwt_secret");
 
     // 3. Find the user by ID from decoded token
-    req.user = await User.findById(decoded.id).select("-password");
-
-    if (!req.user) {
-      return res.status(401).json({ message: "User not found" });
-    }
-
+    req.userId = decoded.id
+    
     next(); // Pass control to the next function (the Controller)
   } catch (error) {
     console.error("Auth error:", error.message);
@@ -34,10 +30,17 @@ export const protect = async (req, res, next) => {
 };
 
 // 2. Second middleware: Checks if user is an Admin
-export const admin = (req, res, next) => {
-  if (req.user && req.user.role?.toLowerCase() === 'admin') {
-    next(); // User is admin, proceed to the controller
-  } else {
-    res.status(403).json({ message: 'Not authorized ' });
+export const admin = async (req, res, next) => {
+  try {
+    const user = req.user || (req.userId ? await User.findById(req.userId).select("role") : null);
+    if (user && user.role?.toLowerCase() === "admin") {
+      req.user = user;
+      next(); // User is admin, proceed to the controller
+    } else {
+      res.status(403).json({ message: "Not authorized as admin" });
+    }
+  } catch (error) {
+    console.error("Admin check error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
